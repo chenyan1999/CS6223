@@ -1,5 +1,7 @@
 import os
+import sys
 import json
+import random
 from jsf import JSF
 from tqdm import tqdm
 import fastjsonschema
@@ -31,50 +33,75 @@ def tuple_to_dict(t):
     else:
         return None  # 不可变类型，直接返回
 
-def generate_test_sample():
-    if os.path.exists('test_set.json'):
-        with open('test_set.json', 'r') as f:
-            dataset = json.load(f)
-    else:
-        dataset = {}
-    for i in tqdm(range(100), desc='Generating test schema and json data'):
-        schema = generate_schema()
-        tuple_schema = dict_to_tuple(schema)
-        if tuple_schema in dataset:
-            continue
-        dataset[tuple_schema] = []
-        faker = JSF(schema)
+def generate_test_sample(num):
+    # scan the schema directory
+    if not os.path.exists('./json_data'):
+        os.mkdir('./json_data')
+    if not os.path.exists('./schemas'):
+        os.mkdir('./schemas')
+        schema_hashes = []
+    else: # load existing schemas and convert them to hashable format
+        schemas = os.listdir('./schemas')
+        schema_hashes = [schema.split('.')[0] for schema in schemas]
+    
+    # generate schema and corresponding json data
+    for i in tqdm(range(num), desc='Generating test samples'):
         try:
-            faker.generate()
+            schema = generate_schema()
+            # check if the schema has been generated before
+            tuple_schema = dict_to_tuple(schema)
+            schema_hash = hash(tuple_schema)
+            if schema_hash in schema_hashes:
+                continue
+            # if not, add the schema hash to the list
+            schema_hashes.append(schema_hash)
+            
+            json_datas = []
+            for j in range(10):
+                json_data = generate_json_data(schema)
+                json_datas.append(json_data)
+            # save schema
+            schema_path = os.path.join('./schemas', f'{schema_hash}.json')
+            with open(schema_path, 'w') as f:
+                json.dump(schema, f, indent=4)
+            # save json data
+            json_data_path = os.path.join('./json_data', f'{schema_hash}_json_data.json')
+            with open(json_data_path, 'w') as f:
+                json.dump(json_datas, f, indent=4)
         except:
             continue
-        for j in range(50):
-            json_data = faker.generate()
-            dataset[tuple_schema].append(json_data)
-    with open('test_set.json', 'w') as f:
-        json.dump(dataset, f, indent=4)
 
-def conduct_differential_testing(dataset):
+def conduct_differential_testing():
     '''
     Func: load test cases and conduct differential testing
     '''
-    # load json schema and corresponding json data
-    # in a dict format: {schema: [json_data1, json_data2, ...]}
-
     # conduct differential testing
     failed_cases = []
-    for schema in dataset:
+    for schema_file in tqdm(os.listdir('./schemas'), desc='Conducting differential testing'):
+        # load schema
+        schema_path = os.path.join('./schemas', schema_file)
+        with open(schema_path, 'r') as f:
+            schema = json.load(f)
+        # load json data
+        json_data_path = os.path.join('./json_data', f'{schema_file.split(".")[0]}_json_data.json')
+        with open(json_data_path, 'r') as f:
+            json_datas = json.load(f)
         # test json data that suppose to pass the schema checker
-        for json_data in dataset[schema]: 
+        for json_data in json_datas: 
             result = differential_testing(schema, json_data)
             if result == False:
                 failed_cases.append((schema, json_data))
         # test json data that are supposed to fail the schema checker
         # randomly pick n schema
-        other_schemas = random.sample(dataset.keys(), len(dataset[schema]))
-        for other_schema in other_schemas:
+
+        other_schema_files = random.sample(os.listdir('./schemas'), len(json_datas))
+        for other_schema_file in other_schema_files:
+            # load their json data
+            json_data_path = os.path.join('./json_data', f'{other_schema_file.split(".")[0]}_json_data.json')
+            with open(json_data_path, 'r') as f:
+                json_datas = json.load(f)
             # randomly pick 1 json data
-            other_json_data = random.choice(dataset[other_schema])
+            other_json_data = random.choice(json_datas)
             result = differential_testing(schema, other_json_data)
             if result == False:
                 failed_cases.append((schema, other_json_data))
@@ -83,9 +110,21 @@ def conduct_differential_testing(dataset):
     with open('failed_cases.json', 'w') as f:
         json.dump(failed_cases, f, indent=4)
 
+def clean_data():
+    '''
+    Func: clean data
+    '''
+    if os.path.exists('./json_data'):
+        os.system('rm -rf ./json_data')
+    if os.path.exists('./schemas'):
+        os.system('rm -rf ./schemas')
+    if os.path.exists('./failed_cases.json'):
+        os.system('rm -rf ./failed_cases.json')
+
 def main():
-    generate_test_sample()
-    # conduct_differential_testing()
+    clean_data()
+    generate_test_sample(1000)
+    conduct_differential_testing()
 
 if __name__ == '__main__':
     main()

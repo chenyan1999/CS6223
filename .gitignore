@@ -1,0 +1,6 @@
+json_data/*
+schemas/*
+failed_cases.json
+__pycache__
+test_schema.ipynb
+test.py

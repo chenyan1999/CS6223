@@ -1,3 +1,4 @@
+import sys
 import jsonschema
 import fastjsonschema
 
@@ -45,4 +46,4 @@ def differential_testing(schema, json_data):
         if jsonschema_exception_code == fastjsonschema_exception_code:
             return True
         else:
-            return False, (jsonschema_exception, fastjsonschema_exception)    
+            return False
