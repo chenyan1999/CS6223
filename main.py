@@ -91,6 +91,7 @@ def conduct_differential_testing():
             result = differential_testing(schema, json_data)
             if result == False:
                 failed_cases.append((schema, json_data))
+                break # if one json data fails, then skip the rest
         # test json data that are supposed to fail the schema checker
         # randomly pick n schema
 

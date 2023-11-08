@@ -1,5 +1,6 @@
 import re
 import random
+import numpy as np
 from jsf import JSF
 from rbloom import Bloom
 from random_regex import RegexGenerator
@@ -49,72 +50,97 @@ def generate_schema(level=0):
     # generate properties
     if schema["type"] == 'string':
         if random.choice([True, False]):
-            schema["format"] = random.choice(['float','date-time', 'time', 'date', 'email', 'hostname', 'ipv4', 'ipv6', 'uri', 'uri-reference', 'uri-template', 'json-pointer', 'relative-json-pointer'])
+            #schema["format"] = random.choice(['float','date-time', 'time', 'date', 'email', 'hostname', 'ipv4', 'ipv6', 'uri', 'uri-reference', 'uri-template', 'json-pointer', 'relative-json-pointer'])
+            if random.choice([True, False]):
+                schema["formatMinimum"] = random.randint(0, 100)
+            if random.choice([True, False]):
+                if "formatMinimum" in schema:
+                    schema["formatMaximum"] = random.randint(schema["formatMinimum"]+1, 200)
+                else:
+                    schema["formatMaximum"] = random.randint(0, 200)
         return schema
         if random.choice([True, False]):
             schema["minLength"] = random.randint(1, 100)
         if random.choice([True, False]):
             if "minLength" in schema:
-                schema["maxLength"] = random.randint(schema["minLength"], 200)
+                schema["maxLength"] = random.randint(schema["minLength"]+1, 200)
             else:
                 schema["maxLength"] = random.randint(0, 200)
         if random.choice([True, False]):
             schema["pattern"] = get_random_regex()
+        if random.choice([True, False]):
+            schema["contentEncoding"] = random.choice(['7bit', '8bit', 'binary', 'quoted-printable', 'base64'])
         if level == max_deepth:
             return schema
     elif schema["type"] == 'number':
         if random.choice([True, False]):
-            random_number = random.randint(0, 50)
+            random_number = np.random.normal()
             if random.choice([True, False]):
-                schema["minimum"] = random.choice([random_number, float(random_number)])
+                schema["minimum"] = random_number
             else:
-                schema["exclusiveMinimum"] = random.choice([random_number, float(random_number)])
+                schema["exclusiveMinimum"] = random_number
         if random.choice([True, False]):
             if "minimum" in schema:
-                random_number = random.randint(schema["minimum"], 100)
+                random_number = random.randint(schema["minimum"]+1, 1e10)
             elif "exclusiveMinimum" in schema:
-                random_number = random.randint(schema["exclusiveMinimum"], 100)
+                random_number = random.randint(schema["exclusiveMinimum"]+1, 1e10)
             else:
-                random_number = random.randint(0, 100)
+                random_number = np.random.normal()
             if random.choice([True, False]):
-                schema["maximum"] = random.choice([random_number, float(random_number)])
+                schema["maximum"] = random_number
             else:
-                schema["exclusiveMaximum"] = random.choice([random_number, float(random_number)])
+                schema["exclusiveMaximum"] = random_number
+        # if random.choice([True, False]):
+        #     schema["multipleOf"] = random.uniform(1.0, 5.0)
         if random.choice([True, False]):
-            schema["multipleOf"] = random.uniform(1.0, 5.0)
+            if "minimum" in schema:
+                min_number = schema["minimum"]
+            elif "exclusiveMinimum" in schema:
+                min_number = schema["exclusiveMinimum"]
+            else:
+                min_number = 0
+            if "maximum" in schema:
+                max_number = schema["maximum"]
+            elif "exclusiveMaximum" in schema:
+                max_number = schema["exclusiveMaximum"]
+            else:
+                max_number = 100
+            # 从 min_number 到 max_number 之间随机选取10个数
+            schema["enum"] = random.sample([random.uniform(min_number, max_number) for _ in range(10)], 10)
         if level == max_deepth:
             return schema
     elif schema["type"] == 'integer':
         if random.choice([True, False]):
-            random_number = random.randint(0, 50)
+            random_number = random.randrange(-1e10, 1e10)
             if random.choice([True, False]):
                 schema["minimum"] = random.choice([random_number, float(random_number)])
             else:
                 schema["exclusiveMinimum"] = random.choice([random_number, float(random_number)])
         if random.choice([True, False]):
             if "minimum" in schema:
-                random_number = random.randint(schema["minimum"], 100)
+                random_number = random.randint(schema["minimum"]+1, 1e10)
             elif "exclusiveMinimum" in schema:
-                random_number = random.randint(schema["exclusiveMinimum"], 100)
+                random_number = random.randint(schema["exclusiveMinimum"]+1, 1e10)
             else:
-                random_number = random.randint(0, 100)
+                random_number = random.randrange(-1e10, 1e10)
             if random.choice([True, False]):
                 schema["maximum"] = random.choice([random_number, float(random_number)])
             else:
                 schema["exclusiveMaximum"] = random.choice([random_number, float(random_number)])
         if random.choice([True, False]):
-            random_number = random.randint(1, 5)
+            random_number = random.randint(1, 10)
             schema["multipleOf"] = random.choice([random_number, float(random_number)])
         if level == max_deepth:
             return schema
     elif schema["type"] == 'boolean':
+        schema["enum"] = [True, False]
         return schema
     elif schema["type"] == 'array':
         if random.choice([True, False]):
             schema["minItems"] = random.randint(0, 6)
         if random.choice([True, False]):
             if "minItems" in schema:
-                schema["maxItems"] = random.randint(schema["minItems"], 20)
+                schema["maxItems"] = random.randint(schema["minItems"]+1, 20)
             else:
                 schema["maxItems"] = random.randint(0, 20)
         if random.choice([True, False]):
@@ -128,7 +154,7 @@ def generate_schema(level=0):
             schema["minProperties"] = random.randint(1, 3)
         if random.choice([True, False]):
             if "minProperties" in schema:
-                schema["maxProperties"] = random.randint(schema["minProperties"], 6)
+                schema["maxProperties"] = random.randint(schema["minProperties"]+1, 6)
             else:
                 schema["maxProperties"] = random.randint(1, 6)
         if "min_properties" in schema.keys():

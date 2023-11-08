@@ -43,7 +43,12 @@ def differential_testing(schema, json_data):
     if jsonschema_exception_code == -1 and fastjsonschema_exception_code == -1:
         return True
     else: # at least one of the two methods raise exception
-        if jsonschema_exception_code == fastjsonschema_exception_code:
+        # if raise same error
+        if jsonschema_exception_code == fastjsonschema_exception_code: 
             return True
         else:
-            return False
+            # if only one of the two methods raise exception
+            if jsonschema_exception_code == -1 or fastjsonschema_exception_code == -1:
+                return False
+            else: # if both methods raise exception but different error
+                return True
