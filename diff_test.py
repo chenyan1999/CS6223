@@ -11,44 +11,22 @@ def differential_testing(schema, json_data):
     Return:
         True if two methods return the same result, otherwise False
     '''
-    jsonschema_exception = None
-    jsonschema_exception_code = -1
     try:
         # raise exception if json_data does not match schema
         jsonschema.validate(json_data, schema)
+        jsonschema_pass = True
     except: # record exception
-        jsonschema_exception = sys.exc_info()[0].__name__
-        if jsonschema_exception == 'ValidationError':
-            # means that the json_data does not match schema
-            jsonschema_exception_code = 0
-        if jsonschema_exception == 'SchemaError':
-            # means that the schema is invalid
-            jsonschema_exception_code = 1
+        jsonschema_pass = False
 
-    fastjsonschema_exception = None
-    fastjsonschema_exception_code = -1
     try:
         # raise exception if json_data does not match schema
         fastjsonschema.validate(schema, json_data)
+        fastjsonschema_pass = True
     except: # record exception
-        fastjsonschema_exception = sys.exc_info()[0].__name__
-        if fastjsonschema_exception == 'JsonSchemaValueException':
-            # means that the json_data does not match schema
-            fastjsonschema_exception_code = 0
-        if fastjsonschema_exception == 'JsonSchemaDefinitionException':
-            # means that the schema is invalid
-            fastjsonschema_exception_code = 1
+        fastjsonschema_pass = False
 
     # if none of the two methods raise exception, then they return the same result
-    if jsonschema_exception_code == -1 and fastjsonschema_exception_code == -1:
+    if jsonschema_pass == fastjsonschema_pass:
         return True
-    else: # at least one of the two methods raise exception
-        # if raise same error
-        if jsonschema_exception_code == fastjsonschema_exception_code: 
-            return True
-        else:
-            # if only one of the two methods raise exception
-            if jsonschema_exception_code == -1 or fastjsonschema_exception_code == -1:
-                return False
-            else: # if both methods raise exception but different error
-                return True
+    else:
+        return False

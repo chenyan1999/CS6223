@@ -46,8 +46,8 @@ def generate_test_sample(num):
     
     # generate schema and corresponding json data
     for i in tqdm(range(num), desc='Generating test samples'):
+        schema = generate_schema()
         try:
-            schema = generate_schema()
             # check if the schema has been generated before
             tuple_schema = dict_to_tuple(schema)
             schema_hash = hash(tuple_schema)
@@ -57,7 +57,7 @@ def generate_test_sample(num):
             schema_hashes.append(schema_hash)
             
             json_datas = []
-            for j in range(10):
+            for j in range(50):
                 json_data = generate_json_data(schema)
                 json_datas.append(json_data)
             # save schema
@@ -124,7 +124,7 @@ def clean_data():
 
 def main():
     clean_data()
-    generate_test_sample(1000)
+    generate_test_sample(10000)
     conduct_differential_testing()
 
 if __name__ == '__main__':
